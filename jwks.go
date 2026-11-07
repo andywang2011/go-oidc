@@ -131,18 +131,30 @@ func ecPublicKeyFromJWK(crv, xB64, yB64 string) (*ecdsa.PublicKey, error) {
 	default:
 		return nil, fmt.Errorf("oidc: unsupported ec curve %q", crv)
 	}
-	x, err := decodeCoordinate(xB64)
+	x, err := decodeCoordinateBytes(xB64)
 	if err != nil {
 		return nil, fmt.Errorf("oidc: decode ec x: %w", err)
 	}
-	y, err := decodeCoordinate(yB64)
+	y, err := decodeCoordinateBytes(yB64)
 	if err != nil {
 		return nil, fmt.Errorf("oidc: decode ec y: %w", err)
 	}
-	return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, nil
+	byteLen := (curve.Params().BitSize + 7) / 8
+	if len(x) > byteLen || len(y) > byteLen {
+		return nil, fmt.Errorf("oidc: ec coordinate too large for %s", crv)
+	}
+	uncompressed := make([]byte, 1+2*byteLen)
+	uncompressed[0] = 0x04
+	copy(uncompressed[1+byteLen-len(x):1+byteLen], x)
+	copy(uncompressed[1+2*byteLen-len(y):], y)
+	pub, err := ecdsa.ParseUncompressedPublicKey(curve, uncompressed)
+	if err != nil {
+		return nil, fmt.Errorf("oidc: parse ec public key: %w", err)
+	}
+	return pub, nil
 }
 
-func decodeCoordinate(b64 string) (*big.Int, error) {
+func decodeCoordinateBytes(b64 string) ([]byte, error) {
 	raw, err := base64.RawURLEncoding.DecodeString(b64)
 	if err != nil {
 		raw, err = base64.URLEncoding.DecodeString(b64)
@@ -150,7 +162,7 @@ func decodeCoordinate(b64 string) (*big.Int, error) {
 			return nil, err
 		}
 	}
-	return new(big.Int).SetBytes(raw), nil
+	return raw, nil
 }
 
 // jwksCache caches JWKS keys with a TTL and refreshes once on unknown kid.

@@ -15,40 +15,9 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Docs - no Han characters
-        run: |
-          if command -v rg >/dev/null 2>&1; then
-            if rg -n '[\p{Han}]' --glob '*.go' --glob '*.md' --glob '*.yml' --glob '!**/examples/**' .; then
-              echo "Han characters found; docs must be English-only" >&2
-              exit 1
-            fi
-          else
-            python3 - <<'PY'
-import pathlib, re, sys
-han = re.compile("[%s-%s]" % (chr(0x4E00), chr(0x9FFF)))
-bad = []
-for p in pathlib.Path('.').rglob('*'):
-    if p.is_dir() or 'examples' in p.parts: continue
-    if p.suffix not in {'.go','.md','.yml','.yaml'}: continue
-    try: text = p.read_text(encoding='utf-8')
-    except Exception: continue
-    if han.search(text):
-        bad.append(str(p))
-if bad:
-    print('Han characters in:', *bad, sep='\n  ', file=sys.stderr)
-    sys.exit(1)
-PY
-          fi
+        run: python3 scripts/check_no_han.py
       - name: Docs - README headings
-        run: |
-          python3 - <<'PY'
-import pathlib, re, sys
-text = pathlib.Path('README.md').read_text(encoding='utf-8')
-heads = re.findall(r'^## (.+)$', text, re.M)
-want = ['Install', 'Quick start', 'Examples', 'License']
-if heads != want:
-    print(f'README ## headings must be exactly {want}, got {heads}', file=sys.stderr)
-    sys.exit(1)
-PY
+        run: python3 scripts/check_readme_headings.py
       - name: Vet
         run: go vet ./...
       - name: Test with race

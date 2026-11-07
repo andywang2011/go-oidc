@@ -3,6 +3,7 @@ name: test
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -13,7 +14,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Docs — no Han characters
+      - name: Docs - no Han characters
         run: |
           if command -v rg >/dev/null 2>&1; then
             if rg -n '[\p{Han}]' --glob '*.go' --glob '*.md' --glob '*.yml' --glob '!**/examples/**' .; then
@@ -23,7 +24,7 @@ jobs:
           else
             python3 - <<'PY'
 import pathlib, re, sys
-han = re.compile(r'[\u4e00-\u9fff]')
+han = re.compile("[%s-%s]" % (chr(0x4E00), chr(0x9FFF)))
 bad = []
 for p in pathlib.Path('.').rglob('*'):
     if p.is_dir() or 'examples' in p.parts: continue
@@ -37,7 +38,7 @@ if bad:
     sys.exit(1)
 PY
           fi
-      - name: Docs — README headings
+      - name: Docs - README headings
         run: |
           python3 - <<'PY'
 import pathlib, re, sys

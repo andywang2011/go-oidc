@@ -1,0 +1,23 @@
+title = "go-* release allowlist"
+
+[extend]
+useDefault = true
+
+# Test fixtures and format-string markers (not real secrets).
+[[allowlists]]
+description = "Test and example fixtures"
+paths = [
+  '''(?i).*_test\.go$''',
+  '''(?i).*/examples/.*''',
+  '''(?i).*/testdata/.*''',
+]
+
+[[allowlists]]
+description = "PEM armor format markers in key formatters"
+regexes = [
+  '''-----BEGIN RSA PRIVATE KEY-----''',
+  '''-----END RSA PRIVATE KEY-----''',
+  '''-----BEGIN PRIVATE KEY-----''',
+  '''-----END PRIVATE KEY-----''',
+  '''-----BEGIN PGP PRIVATE KEY BLOCK-----''',
+]

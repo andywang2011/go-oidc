@@ -1,18 +1,21 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
+  default: none
   enable:
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
     - gosec
     - errorlint
     - bodyclose
     - contextcheck
     - noctx
-
-issues:
-  exclude-use-default: false
+  settings:
+    gosec:
+      excludes:
+        - G404
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+      - path: examples/
+        linters:
+          - gosec
